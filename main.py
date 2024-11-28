@@ -1,6 +1,9 @@
 #Alyssa Karlson, Student ID: 010965931
 
 import csv
+import datetime
+from fileinput import filename
+
 
 # HashTable class using chaining.
 class ChainingHashTable:
@@ -77,10 +80,10 @@ class Package:
 
 # Create package objects from the CSV package file
 # Load package objects into packageHashTable
-def load_package_data(filename, packageHashTable):
-    with open(filename) as package_info:
-        package_data = csv.reader(package_info, delimiter=',')
-        for package in package_data:
+def loadPackageData(filename, packageHashTable):
+    with open(filename) as packageInfo:
+        packageData = csv.reader(packageInfo, delimiter=',')
+        for package in packageData:
             pID = int(package[0])
             pAddress = package[1]
             pCity = package[2]
@@ -100,9 +103,92 @@ def load_package_data(filename, packageHashTable):
 packageHashTable = ChainingHashTable()
 
 # Load packages into hash table
-load_package_data("Package_File.csv", packageHashTable)
+loadPackageData("Package_File.csv", packageHashTable)
 
 '''
 test if package data was loaded correctly into packageHashTable
 print(packageHashTable.search(1))
 '''
+
+#create truck class
+class Truck:
+    def __init__(self, capacity, speed, load, packages, mileage, address, depart_time):
+        self.capacity = capacity
+        self.speed = speed
+        self.load = load
+        self.packages = packages
+        self.mileage = mileage
+        self.address = address
+        self.depart_time = depart_time
+        self.time = depart_time
+
+    def __str__(self):
+        return "%s, %s, %s, %s, %s, %s, %s" % (self.capacity, self.speed, self.load, self.packages, self.mileage,
+                                               self.address, self.depart_time)
+
+#create truck objects and manually load with packages
+truck1 = Truck(16,18,None, [15, 13,19,1,2,4,14,16,17,20,21,24,33,34,7,40],0.0, "4001 South 700 East", datetime.timedelta(hours=8))
+truck2 = Truck(16,18,None,[3,18,36,38,37,5,10.29], 0.0, "4001 South 700 East", datetime.timedelta(hours=10, minutes=20))
+truck3 = Truck(16,18,None,[25,26,28,31,32,9,6,8,11,12,22,23,30,27,39,35],0.0,"4001 South 700 East", datetime.timedelta(hours=8))
+
+with open("Distance_File.csv") as csvfile:
+    Distance_File = csv.reader(csvfile)
+    Distance_File = list(Distance_File)
+
+def distanceBetween(x_value, y_value):
+    distance = Distance_File[x_value][y_value]
+    if distance == '':
+        distance = Distance_File[y_value][x_value]
+
+    return float(distance)
+
+
+# Read the file of address information
+with open("Address_File.csv") as csvfile1:
+    Address_File = csv.reader(csvfile1)
+    Address_File = list(Address_File)
+
+# Method to get address number from string literal of address
+def loadAddressData(address):
+    for row in Address_File:
+        if address in row[2]:
+            return int(row[0])
+
+def truckDeliverPackages(truck):
+    notDelivered = []
+    for ID in truck.packages:
+        package = packageHashTable.search(ID)
+        notDelivered.append(package)
+    truck.packages.clear()
+
+    while len(notDelivered) > 0:
+        nextAddress = 2000
+        nextPackage = None
+        for package in notDelivered:
+            if distanceBetween(loadAddressData(truck.address), loadAddressData(package.address)) <= nextAddress:
+                nextAddress = distanceBetween(loadAddressData(truck.address), loadAddressData(package.address))
+            nextPackage = package
+
+    truck.packages.append(nextPackage.ID)
+    notDelivered.remove(nextPackage)
+    truck.mileage += nextAddress
+    truck.address = nextPackage.address
+    truck.time += datetime.timedelta(hours=nextAddress / 18)
+    nextPackage.delivery_time = truck.time
+    nextPackage.departure_time = truck.depart_time
+
+    truckDeliverPackages(truck1)
+    truckDeliverPackages(truck3)
+    truck2.departure_time = min(truck1.time, truck3.time)
+    truckDeliverPackages(truck2)
+
+class Main:
+    # User Interface
+    # Upon running the program, the below message will appear.
+    print("WGUPS")
+    print("Total Mileage:")
+    print(truck1.mileage + truck2.mileage + truck3.mileage)  # Print total mileage for all trucks
+
+    print(distanceBetween(1, 2))
+
+
