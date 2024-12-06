@@ -77,6 +77,13 @@ class Package:
     def __str__(self):
         return "%s, %s, %s, %s, %s, %s, %s, %s, %s" % (self.ID, self.address, self.city, self.state, self.zipcode, self.Deadline_time, self.weight, self.delivery_time, self.status)
 
+    def update_status(self, convert_timedelta):
+        if self.delivery_time < convert_timedelta:
+            self.status = "Delivered"
+        elif self.departure_time > convert_timedelta:
+            self.status = "En route"
+        else:
+            self.status = "At Hub"
 
 # Create package objects from the CSV package file
 # Load package objects into packageHashTable
@@ -127,68 +134,119 @@ class Truck:
                                                self.address, self.depart_time)
 
 #create truck objects and manually load with packages
-truck1 = Truck(16,18,None, [15, 13,19,1,2,4,14,16,17,20,21,24,33,34,7,40],0.0, "4001 South 700 East", datetime.timedelta(hours=8))
-truck2 = Truck(16,18,None,[3,18,36,38,37,5,10.29], 0.0, "4001 South 700 East", datetime.timedelta(hours=10, minutes=20))
-truck3 = Truck(16,18,None,[25,26,28,31,32,9,6,8,11,12,22,23,30,27,39,35],0.0,"4001 South 700 East", datetime.timedelta(hours=8))
+truck1 = Truck(16,18,16, [15, 13,19,1,2,4,14,16,17,20,21,24,33,34,7,40],0.0, "4001 South 700 East", datetime.timedelta(hours=8))
+truck2 = Truck(16,18,8,[3,18,36,38,37,5,10,29], 0.0, "4001 South 700 East", datetime.timedelta(hours=8))
+truck3 = Truck(16,18,16,[25,26,28,31,32,9,6,8,11,12,22,23,30,27,39,35],0.0,"4001 South 700 East", datetime.timedelta(hours=10))
 
 with open("Distance_File.csv") as csvfile:
-    Distance_File = csv.reader(csvfile)
-    Distance_File = list(Distance_File)
+    distanceData = csv.reader(csvfile)
+    distanceData = list(distanceData)
 
 def distanceBetween(x_value, y_value):
-    distance = Distance_File[x_value][y_value]
+    distance = distanceData[x_value][y_value]
     if distance == '':
-        distance = Distance_File[y_value][x_value]
+        distance = distanceData[y_value][x_value]
 
     return float(distance)
 
-
 # Read the file of address information
 with open("Address_File.csv") as csvfile1:
-    Address_File = csv.reader(csvfile1)
-    Address_File = list(Address_File)
+    CSV_Address = csv.reader(csvfile1)
+    CSV_Address = list(CSV_Address)
 
 # Method to get address number from string literal of address
 def loadAddressData(address):
-    for row in Address_File:
+    for row in CSV_Address:
         if address in row[2]:
             return int(row[0])
 
-def truckDeliverPackages(truck):
-    notDelivered = []
-    for ID in truck.packages:
-        package = packageHashTable.search(ID)
-        notDelivered.append(package)
+# Method for ordering packages on a given truck using the nearest neighbor algo
+# This method also calculates the distance a given truck drives once the packages are sorted
+def delivering_packages(truck):
+    # Place all packages into array of not delivered
+    not_delivered = []
+    for packageID in truck.packages:
+        package = packageHashTable.search(packageID)
+        not_delivered.append(package)
+    # Clear the package list of a given truck so the packages can be placed back into the truck in the order
+    # of the nearest neighbor
     truck.packages.clear()
 
-    while len(notDelivered) > 0:
-        nextAddress = 2000
-        nextPackage = None
-        for package in notDelivered:
-            if distanceBetween(loadAddressData(truck.address), loadAddressData(package.address)) <= nextAddress:
-                nextAddress = distanceBetween(loadAddressData(truck.address), loadAddressData(package.address))
-            nextPackage = package
+    # Cycle through the list of not_delivered until none remain in the list
+    # Adds the nearest package into the truck.packages list one by one
+    while len(not_delivered) > 0:
+        next_address = 2000
+        next_package = None
+        for package in not_delivered:
+            if distanceBetween(loadAddressData(truck.address), loadAddressData(package.address)) <= next_address:
+                next_address = distanceBetween(loadAddressData(truck.address), loadAddressData(package.address))
+                next_package = package
+        # Adds next closest package to the truck package list
+        truck.packages.append(next_package.ID)
+        # Removes the same package from the not_delivered list
+        not_delivered.remove(next_package)
+        # Takes the mileage driven to this packaged into the truck.mileage attribute
+        truck.mileage += next_address
+        # Updates truck's current address attribute to the package it drove to
+        truck.address = next_package.address
+        # Updates the time it took for the truck to drive to the nearest package
+        truck.time += datetime.timedelta(hours=next_address / 18)
+        next_package.delivery_time = truck.time
+        next_package.departure_time = truck.depart_time
 
-    truck.packages.append(nextPackage.ID)
-    notDelivered.remove(nextPackage)
-    truck.mileage += nextAddress
-    truck.address = nextPackage.address
-    truck.time += datetime.timedelta(hours=nextAddress / 18)
-    nextPackage.delivery_time = truck.time
-    nextPackage.departure_time = truck.depart_time
 
-    truckDeliverPackages(truck1)
-    truckDeliverPackages(truck3)
-    truck2.departure_time = min(truck1.time, truck3.time)
-    truckDeliverPackages(truck2)
+# Put the trucks through the loading process
+delivering_packages(truck1)
+delivering_packages(truck2)
+delivering_packages(truck3)
 
 class Main:
     # User Interface
     # Upon running the program, the below message will appear.
     print("WGUPS")
-    print("Total Mileage:")
-    print(truck1.mileage + truck2.mileage + truck3.mileage)  # Print total mileage for all trucks
+    print("Total Mileage:", truck1.mileage + truck2.mileage + truck3.mileage)  # Print total mileage for all trucks
+''' 
+tests to determine if data uploaded from csv files correctly
 
     print(distanceBetween(1, 2))
+    print(loadAddressData(truck1.address))
+    print(truck3.depart_time)
+    print(truck1.time)
+    print(truck2.time)
+    
+'''
+
+    text = input("Please select from the following options (type only the number to select option)\n"
+                 "1. Print all package statuses with time and total mileage\n"
+                 "2. Get a single package status with time\n"
+                 "3. Exit the Program")
+    if text == "1":
+            user_time = input("Please enter a time to check status of packages. Use the following format, HH:MM:SS")
+            (h, m, s) = user_time.split(":")
+            convertTime = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
+
+            for packageID in range(1, 41):
+                package = packageHashTable.search(packageID)
+                package.update_status(convertTime)
+                print(str(package))
+
+            print('Total Mileage:', truck1.mileage + truck3.mileage + truck2.mileage)
+
+    elif text == "2":
+            user_time = input("Please enter a time to check status of packages. Use the following format, HH:MM:SS")
+            (h, m, s) = user_time.split(":")
+            convertTime = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
+
+            solo_input = input("Enter the numeric package ID")
+            package = packageHashTable.search(int(solo_input))
+            package.update_status(convertTime)
+            print(str(package))
+
+    elif text == "3":
+        print("Exiting the Program")
+        exit()
+
+
+
 
 
