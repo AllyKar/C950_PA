@@ -62,7 +62,7 @@ class ChainingHashTable:
 
 # Create class for packages
 class Package:
-    def __init__(self, ID, address, city, state, zipcode, Deadline_time, weight, status):
+    def __init__(self, ID, address, city, state, zipcode, Deadline_time, weight,note, status):
         self.ID = ID
         self.address = address
         self.city = city
@@ -70,12 +70,13 @@ class Package:
         self.zipcode = zipcode
         self.Deadline_time = Deadline_time
         self.weight = weight
+        self.note = note
         self.status = status
         self.departure_time = None
         self.delivery_time = None
 
     def __str__(self):
-        return "%s, %s, %s, %s, %s, %s, %s, %s, %s" % (self.ID, self.address, self.city, self.state, self.zipcode, self.Deadline_time, self.weight, self.delivery_time, self.status)
+        return "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (self.ID, self.address, self.city, self.state, self.zipcode, self.Deadline_time, self.weight, self.note, self.delivery_time, self.status)
 
     def update_status(self, convert_timedelta):
         if self.delivery_time < convert_timedelta:
@@ -98,10 +99,11 @@ def loadPackageData(filename, packageHashTable):
             pZipcode = package[4]
             pDeadline_time = package[5]
             pWeight = package[6]
+            pNote = package[7]
             pStatus = "At Hub"
 
             # Package object
-            p = Package(pID, pAddress, pCity, pState, pZipcode, pDeadline_time, pWeight, pStatus)
+            p = Package(pID, pAddress, pCity, pState, pZipcode, pDeadline_time, pWeight, pNote, pStatus)
 
             # Insert data into hash table
             packageHashTable.insert(pID, p)
