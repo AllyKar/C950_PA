@@ -196,6 +196,9 @@ class Main:
     #User Interface
     #prints title and total mileage
     print("WGUPS")
+    print("Truck 1 Mileage:", truck1.mileage)
+    print("Truck 2 Mileage:", truck2.mileage)
+    print("Truck 3 Mileage:", truck3.mileage)
     print("Total Mileage:", truck1.mileage + truck2.mileage + truck3.mileage)
 
 
