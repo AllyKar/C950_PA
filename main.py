@@ -3,6 +3,7 @@
 import csv
 import datetime
 from fileinput import filename
+from os import remove
 
 
 # HashTable class using chaining.
@@ -162,6 +163,7 @@ def loadAddressData(address):
         if address in row[2]:
             return int(row[0])
 
+
 #nearest neighbor algorithm to determine order of delivery for packages on truck
 def truckDeliverPackages(truck):
     notDelivered = []
@@ -186,6 +188,9 @@ def truckDeliverPackages(truck):
         nextPackage.delivery_time = truck.time
         nextPackage.departure_time = truck.depart_time
 
+    if truck.time >= datetime.timedelta(hours=10, minutes=20):
+        packageHashTable.insert('9', '410 S State St')
+        print(packageHashTable.search('9'))
 
 #loads/delivers packages for each truck
 truckDeliverPackages(truck1)
