@@ -79,15 +79,25 @@ class Package:
     def __str__(self):
         return "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % (self.ID, self.address, self.city, self.state, self.zipcode, self.Deadline_time, self.weight, self.note, self.delivery_time, self.status)
 
-    def update_status(self, convert_timedelta):
-        if self.delivery_time < convert_timedelta:
-            self.status = "Delivered"
-        elif self.departure_time > convert_timedelta:
+    def update_status(self, convertTime):
+        if self.delivery_time == None:
+            self.status = "At the hub"
+        elif convertTime < self.departure_time:
+            self.status = "At the hub"
+        elif convertTime < self.delivery_time:
             self.status = "En route"
         else:
-            self.status = "At Hub"
+            self.status = "Delivered"
+        if self.ID == 9:
+            if convertTime > datetime.timedelta(hours=10, minutes=20):
+                self.address = "410 S State St"
+                self.zipcode = "84111"
+            else:
+                self.address = "300 State St"
+                self.zipcode = "84103"
 
-# Create package objects from the CSV package file
+
+            # Create package objects from the CSV package file
 # Load package objects into packageHashTable
 def loadPackageData(filename, packageHashTable):
     with open(filename) as packageInfo:
@@ -108,6 +118,7 @@ def loadPackageData(filename, packageHashTable):
 
             # Insert data into hash table
             packageHashTable.insert(pID, p)
+
 
 # Create hash table
 packageHashTable = ChainingHashTable()
@@ -135,6 +146,7 @@ class Truck:
     def __str__(self):
         return "%s, %s, %s, %s, %s, %s, %s" % (self.capacity, self.speed, self.load, self.packages, self.mileage,
                                                self.address, self.depart_time)
+
 
 #create truck objects and manually load with packages
 truck1 = Truck(16,18,16, [15, 13,19,1,2,4,14,16,17,20,21,24,33,34,7,40],0.0, "4001 South 700 East", datetime.timedelta(hours=8))
@@ -187,10 +199,6 @@ def truckDeliverPackages(truck):
         truck.time += datetime.timedelta(hours=nextAddress / 18)
         nextPackage.delivery_time = truck.time
         nextPackage.departure_time = truck.depart_time
-
-    if truck.time >= datetime.timedelta(hours=10, minutes=20):
-        packageHashTable.insert('9', '410 S State St')
-        print(packageHashTable.search('9'))
 
 #loads/delivers packages for each truck
 truckDeliverPackages(truck1)
